@@ -677,6 +677,82 @@ curl http://localhost:8000/tasks
 
 ---
 
+## Recomendação prática (modo de uso maduro)
+
+Depois de rodar o ciclo completo nesta PoC, dá para destilar uma recomendação objetiva: **como usar bem** no dia a dia e quais hábitos separam quem extrai valor de quem desperdiça tokens.
+
+### A recomendação central
+
+Use o AI-DLC como **multiplicador seletivo**, não como ferramenta padrão para tudo. A maturidade está em saber **quando ligar o processo**.
+
+**Regra única:**
+
+```text
+Use quando: custo de errar a direção > custo do processo
+```
+
+**Na dúvida, pergunte:** *"esse código vai viver, crescer e ser mantido?"*
+
+| Resposta | Ação |
+|----------|------|
+| Sim | Vale o processo AI-DLC |
+| Não — descartável ou trivial | Peça código direto |
+
+### Por tipo de tarefa
+
+| Use AI-DLC | Pule o AI-DLC |
+|------------|---------------|
+| Feature nova de complexidade média/alta | Fix de uma linha |
+| Projeto do zero | Ajuste trivial |
+| Código que você não conhece (brownfield) | Script descartável |
+| Requisitos ainda nebulosos | Exploração rápida |
+| Algo que um time vai manter | |
+
+**Confie na adaptação:** dentro do AI-DLC, deixe o sistema se enxugar. Nesta PoC, **8 de 10 etapas** foram puladas — não force etapas descartadas sem motivo. O workflow já calibra profundidade pela complexidade.
+
+### Hábitos que fazem a diferença
+
+O que separa uso bom de uso teatral:
+
+| # | Hábito | Por quê |
+|---|--------|---------|
+| 1 | **Revise de verdade** em cada `✅ Approve` | Aprovar no automático = pior dos mundos (custo do processo sem controle) |
+| 2 | **Comece pequeno** num contexto novo | Um recurso, escopo enxuto — vitória rápida antes da ambição (como esta API de tarefas) |
+| 3 | **Commite os artefatos** | `aidlc-docs/`, `.cursor/rules/`, `.aidlc-rule-details/` — sem isso, handoff e continuidade morrem |
+| 4 | **Mudanças significativas pelo fluxo** | Evita drift; edição manual exige atualizar docs conscientemente |
+| 5 | **Customize com extensões**, não no núcleo | Sobrevive a updates; isolado e com opt-in |
+| 6 | **Trate artefatos como propostas** | Bonito e confiante ≠ correto — valide suposições da IA |
+
+Se você **não vai revisar**, não use AI-DLC naquela tarefa.
+
+### Fluxo ideal no dia a dia
+
+```text
+1. Avaliar se a tarefa justifica o processo
+2. Abrir com escopo claro: "Using AI-DLC, ..."
+3. Responder perguntas pensando em edge cases (metade do valor está aqui)
+4. Revisar cada gate antes de aprovar
+5. Testar de verdade: pytest + ver funcionando
+6. Commitar código e artefatos juntos
+```
+
+**Em time:** padronize regras, ferramenta e (idealmente) o modelo — consistência entre devs.
+
+### A mentalidade certa
+
+> O AI-DLC **não substitui** o julgamento do dev — **organiza** e o força a aparecer nos momentos certos.
+
+Ele não te faz pensar menos; te faz pensar **antes de codar**, não depois. O valor não está na IA gerar código sozinha — está na **disciplina** que impõe e na **documentação** que sobra.
+
+| Expectativa | Resultado |
+|-------------|-----------|
+| *"Apertar o botão e receber o sistema pronto"* | Frustração + tokens desperdiçados |
+| *"Copiloto disciplinado que confirma antes de agir"* | Ganho real |
+
+Para um dev experiente, o maior valor muitas vezes **não é o código** — é fazer decisões importantes deixarem de ser implícitas (chutadas pela IA no meio da geração) e passarem a ser **escolhas suas, explícitas e registradas**.
+
+---
+
 ## Documentação de referência desta PoC
 
 Esta PoC é o **exemplo concreto** dos motivos acima: requisitos explícitos, plano enxuto, código aprovado, 11 testes passando, `aidlc-docs/` completo.
