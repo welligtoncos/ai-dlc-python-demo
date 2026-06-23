@@ -98,15 +98,176 @@ aidlc-docs/
 
 **Regra de ouro:** código da aplicação na **raiz** (`app/`, `tests/`). Documentação do processo apenas em `aidlc-docs/`.
 
-### Extensões opcionais
+### Extensões opcionais (já incluídas)
 
-Durante Requirements Analysis, a IA pergunta sobre:
+Durante Requirements Analysis, a IA pergunta sobre extensões em `.aidlc-rule-details/extensions/`:
 
-- **Security Baseline** — regras de segurança bloqueantes
-- **Resiliency Baseline** — boas práticas de resiliência
-- **Property-Based Testing** — testes baseados em propriedades
+- **Security Baseline** — `extensions/security/baseline/`
+- **Resiliency Baseline** — `extensions/resiliency/baseline/`
+- **Property-Based Testing** — `extensions/testing/property-based/`
 
-Para PoCs, costuma-se responder **No** às três.
+Para PoCs, costuma-se responder **No**. Para criar **suas próprias** regras, veja a seção abaixo.
+
+---
+
+## Como customizar o AI-DLC (criar e editar regras)
+
+Como tudo no AI-DLC é **texto (markdown)**, você molda o comportamento do agente editando arquivos de regras — sem recompilar nada. Esse é o ponto em que a metodologia brilha: você adapta o processo ao seu time, stack ou compliance.
+
+### A regra de ouro: extensões, não o núcleo
+
+Há duas formas de mexer. A **ordem de preferência** importa:
+
+| Abordagem | Onde | Quando usar | Risco |
+|-----------|------|-------------|-------|
+| **Extensão** (recomendado) | `.aidlc-rule-details/extensions/` | Regras do seu time, qualidade, compliance | Baixo — isolado, sobrevive a updates |
+| **Núcleo** (avançado) | `.cursor/rules/ai-dlc-workflow.mdc` | Mudar o fluxo principal da metodologia | Alto — quebra fácil; conflita com updates |
+
+**Por que preferir extensões?**
+
+- Você **não toca** no núcleo da metodologia
+- Suas regras ficam **por cima** do workflow padrão
+- Quando sair atualização do AI-DLC, o núcleo atualiza sem você refazer mudanças na mão
+- Ganha de graça o sistema de **opt-in** (pergunta na Requirements Analysis)
+- Regras ativas são **bloqueantes** — o estágio não avança até a verificação passar
+
+Editar `ai-dlc-workflow.mdc` funciona, mas um erro ali pode quebrar o comportamento inteiro. Use só se souber exatamente o que está mudando no fluxo.
+
+### Caminho seguro: criar sua própria extensão
+
+Uma extensão são **dois arquivos** na mesma pasta dentro de `.aidlc-rule-details/extensions/`.
+
+Exemplo: regra de qualidade de código em `qualidade/codigo-limpo/`.
+
+#### Passo 1 — Criar a pasta
+
+```text
+.aidlc-rule-details/extensions/
+└── qualidade/
+    └── codigo-limpo/
+        ├── codigo-limpo.md          # Regras (obrigatório)
+        └── codigo-limpo.opt-in.md   # Opt-in (opcional — ver abaixo)
+```
+
+#### Passo 2 — Arquivo de regras (`codigo-limpo.md`)
+
+Cada regra segue o formato:
+
+- Cabeçalho: `## Rule <PREFIXO-NN>: <Título>`
+- Seção **Rule:** o que exigir
+- Seção **Verification:** como o modelo verifica (checagem concreta)
+
+```markdown
+# Code Quality Rules
+
+## Rule CQ-01: Funções pequenas e focadas
+**Rule:** Cada função deve ter responsabilidade única e no máximo ~30 linhas.
+**Verification:** Verifique se nenhuma função excede 30 linhas ou mistura
+responsabilidades distintas. Se exceder, sinalize antes de prosseguir.
+
+## Rule CQ-02: Sem números mágicos
+**Rule:** Valores literais devem ser constantes nomeadas.
+**Verification:** Verifique se há literais numéricos não óbvios no código;
+se houver, exija que sejam extraídos para constantes.
+```
+
+Os IDs (`CQ-01`, `CQ-02`) devem ser **únicos** entre todas as extensões — aparecem nos logs de `aidlc-docs/audit.md`.
+
+**Dica:** copie a estrutura de [security-baseline.md](.aidlc-rule-details/extensions/security/baseline/security-baseline.md) (modelo de referência AWS) e adapte ao seu caso. É o atalho mais rápido para acertar o formato.
+
+#### Passo 3 — Arquivo de opt-in (`codigo-limpo.opt-in.md`)
+
+Contém a pergunta de múltipla escolha exibida na **Requirements Analysis**. Use [security-baseline.opt-in.md](.aidlc-rule-details/extensions/security/baseline/security-baseline.opt-in.md) como molde.
+
+Estrutura do arquivo:
+
+- Título `# Nome — Opt-In`
+- Campo `**Extension**:` com nome legível
+- Seção `## Opt-In Prompt` com a pergunta em markdown (opções A, B, X e `[Answer]:`)
+
+Exemplo da pergunta dentro do opt-in:
+
+```text
+## Question: Code Quality Extensions
+Should code quality rules be enforced for this project?
+
+A) Yes — enforce all CQ rules as blocking constraints
+B) No — skip all CQ rules
+X) Other (please describe after [Answer]: tag below)
+
+[Answer]:
+```
+
+#### Passo 4 — Recarregar
+
+1. Abra um **chat novo** no Cursor (sessão limpa)
+2. Rode `Using AI-DLC, ...` na sua tarefa
+3. Na Requirements Analysis, sua extensão deve aparecer nas perguntas de opt-in
+
+A escolha fica registrada em `aidlc-docs/aidlc-state.md` → `## Extension Configuration`.
+
+### Opt-in vs. sempre-ativo
+
+| Configuração | Arquivos | Comportamento |
+|--------------|----------|---------------|
+| **Opcional** | `.md` + `.opt-in.md` | IA pergunta se você quer ativar na Requirements Analysis |
+| **Sempre ativo** | só `.md` (sem `.opt-in.md`) | Regra aplicada em todo workflow, sem opção de desligar |
+
+Em **ambos** os casos, uma vez ativa, a regra é **bloqueante**: o estágio não conclui até a verificação passar. Ideal para padrões inegociáveis (segurança da empresa, compliance, qualidade mínima).
+
+### Caminho avançado: editar o núcleo
+
+Arquivo: `.cursor/rules/ai-dlc-workflow.mdc`
+
+Use apenas para:
+
+- Ajustar quais fases são obrigatórias vs. condicionais
+- Mudar mensagens de boas-vindas ou gates de aprovação
+- Integrar comportamento que não cabe em uma extensão pontual
+
+**Cuidados:**
+
+- Faça backup ou use git antes de editar
+- Após update do pacote AI-DLC, compare e re-aplique mudanças manualmente
+- Prefira extensões para regras de código, segurança e qualidade
+
+Regras detalhadas por fase ficam em `.aidlc-rule-details/` (ex.: `inception/requirements-analysis.md`, `construction/code-generation.md`). Edite esses arquivos só se quiser mudar **como cada estágio executa**, não apenas **o que o código deve obedecer**.
+
+### Como testar que sua regra funciona
+
+1. Crie a extensão e abra um **chat novo**
+2. Rode uma tarefa pequena: `Using AI-DLC, ...`
+3. Na Requirements Analysis, confirme que sua pergunta de opt-in apareceu
+4. Ative a extensão (resposta **A**)
+5. Force uma violação de propósito (ex.: peça uma função gigante se CQ-01 limita a 30 linhas)
+6. Verifique se o AI-DLC **bloqueia** o estágio citando seu ID (`CQ-01`) e pede correção
+
+| Resultado | O que fazer |
+|-----------|-------------|
+| Bloqueou e citou o ID | Regra funcionando |
+| Passou batido | Seção **Verification** provavelmente vaga — torne o critério binário e checável |
+
+### Como escrever boas regras
+
+A seção **Verification** é onde tudo acontece.
+
+| Ruim (vago) | Bom (checável) |
+|-------------|----------------|
+| "Garanta qualidade" | "Verifique se nenhuma função excede 30 linhas" |
+| "Código seguro" | "Verifique se não há SQL concatenado com input do usuário" |
+| "Boa cobertura de testes" | "Verifique se cada endpoint público tem pelo menos um teste de sucesso e um de erro" |
+
+Pense na Verification como um **teste automatizado em linguagem natural**: quanto mais concreto e binário o critério, mais confiável o bloqueio.
+
+### Referência rápida — extensões existentes
+
+| Extensão | Pasta | Prefixo de regras |
+|----------|-------|-------------------|
+| Security Baseline | `extensions/security/baseline/` | `SECURITY-NN` |
+| Resiliency Baseline | `extensions/resiliency/baseline/` | (ver arquivo `.md`) |
+| Property-Based Testing | `extensions/testing/property-based/` | (ver arquivo `.md`) |
+
+Abra os pares `*.md` + `*.opt-in.md` dessas pastas antes de criar a sua — é o template oficial do formato.
 
 ---
 
@@ -219,8 +380,11 @@ curl http://localhost:8000/tasks
 │   └── routers/tasks.py
 ├── tests/                    # Testes pytest
 ├── requirements.txt
-├── .cursor/rules/            # Regra AI-DLC para o Cursor
-├── .aidlc-rule-details/      # Regras detalhadas do workflow
+├── .cursor/rules/            # Núcleo AI-DLC (editar com cuidado)
+├── .aidlc-rule-details/      # Regras detalhadas + extensions/
+│   ├── inception/              # Regras por fase
+│   ├── construction/
+│   └── extensions/             # Suas extensões customizadas aqui
 └── aidlc-docs/               # Documentação gerada pelo AI-DLC
 ```
 
