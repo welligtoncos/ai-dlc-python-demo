@@ -1,6 +1,8 @@
 # AI-DLC State Tracking
 
 ## Project Information
+- **Project Name**: ai-dlc-python-demo
+- **Repository**: https://github.com/welligtoncos/ai-dlc-python-demo
 - **Project Type**: Greenfield
 - **Start Date**: 2026-06-22T12:00:00Z
 - **Current Stage**: INCEPTION - Requirements Analysis

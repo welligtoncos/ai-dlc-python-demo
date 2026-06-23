@@ -15,3 +15,21 @@
 **Context**: INCEPTION - Requirements Analysis (Step 6 gate)
 
 ---
+
+## Git Setup
+**Timestamp**: 2026-06-22T12:30:00Z
+**User Input**: "git remote add origin https://github.com/welligtoncos/ai-dlc-python-demo.git
+git branch -M main
+git push -u origin main"
+**AI Response**: Initialized git repository (was not a repo). Created .gitignore. Initial commit (70 files). Added remote origin, renamed branch to main, pushed successfully to GitHub.
+**Context**: Repository setup
+
+---
+
+## README
+**Timestamp**: 2026-06-22T12:45:00Z
+**User Input**: "adicione um readme"
+**AI Response**: Created README.md at project root with project overview, AI-DLC context, structure, status, and next steps.
+**Context**: Documentation
+
+---
