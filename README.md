@@ -74,6 +74,74 @@ Para um dev experiente, o maior valor muitas vezes **não é o código** — é 
 
 ---
 
+## Custo de tokens
+
+Por que consome mais do que um prompt direto — e onde você ganha em relação a isso.
+
+O AI-DLC **gasta mais tokens** que um pedido direto — isso é estrutural, não bug. Entender o porquê ajuda a decidir quando vale a pena.
+
+### Por que consome mais
+
+Em vez de uma única troca (`"escreve a API"` → código), o AI-DLC quebra o trabalho em **várias etapas**, cada uma com pelo menos uma chamada ao modelo.
+
+Nesta PoC, isso incluiu:
+
+| Fase | Atividade (tokens entrada + saída) |
+|------|-------------------------------------|
+| Inception | Workspace detection, perguntas, `requirements.md`, `execution-plan.md` |
+| Construction | Plano de código, geração de `app/` + `tests/`, instruções build/test |
+| Contínuo | `audit.md`, `aidlc-state.md`, resumos de aprovação |
+
+**Dois multiplicadores importantes:**
+
+1. **Muito texto gerado** — `requirements.md`, `execution-plan.md`, `audit.md` e resumos são tokens de **saída** que num pedido direto não existiriam.
+
+2. **Contexto relido** — a cada etapa o modelo carrega regras do AI-DLC (ex.: `.cursor/rules/ai-dlc-workflow.mdc`, dezenas de KB) **mais** artefatos das fases anteriores. Esse contexto acumulado entra como tokens de **entrada** repetidamente.
+
+### A magnitude (com honestidade)
+
+Comparado a *"me escreve essa API CRUD"* num único prompt, o AI-DLC consome **várias vezes mais tokens** para produzir o mesmo código final.
+
+Não há número fixo — varia por modelo, tamanho das regras e quantas fases rodam — mas a ordem de grandeza é **"múltiplos"**, não *"uns 10% a mais"*. Você paga por um **processo**, não só por um resultado.
+
+### O que segura o custo
+
+**Inteligência adaptativa:** nesta PoC, o plano **pulou 8 de 10 etapas** por baixa complexidade. O AI-DLC não roda o processo completo cegamente — **se enxuga** conforme a tarefa. Tarefa simples gasta uma fração do que uma complexa gastaria.
+
+Isso evita que o custo vire desperdício automático (desde que você não force etapas desnecessárias).
+
+### Onde você ganha em relação ao custo
+
+A pergunta certa não é *"gasta mais token?"* (gasta), mas **"o que recebo por esses tokens a mais?"**
+
+| Você paga (tokens) | Você recebe |
+|--------------------|-------------|
+| Múltiplas fases | Decisões certas **cedo** (menos retrabalho caro depois) |
+| Documentos gerados | `aidlc-docs/` rastreável **de graça** (onboarding, auditoria, handoff) |
+| Gates de aprovação | **Controle** em cada etapa — a IA não chuta `strip()`, UTC, 204 sozinha |
+| Revisão humana real | Menos horas corrigindo código na direção errada |
+
+Em tarefa que **importa**, tokens extras podem **economizar dinheiro no fim**: uma decisão errada descoberta tarde (código + testes + dependências) custa muito mais que alguns milhares de tokens na Inception.
+
+Em tarefa **trivial**, é desperdício puro — use pedido direto.
+
+### Regra prática de custo
+
+```text
+Vale o token extra quando: custo de errar a direção > custo do processo
+Não vale quando: tarefa pequena, direta, e você não vai revisar os gates
+```
+
+É a **mesma regra** de quando usar o AI-DLC — custo e benefício andam juntos.
+
+### Lembrete sobre fatura
+
+O **AI-DLC é gratuito** (regras open source). O **agente/modelo por baixo** (Cursor, Claude, Copilot, etc.) **não é** — é ali que tokens viram fatura.
+
+Revise o plano e preços do modelo que você usa. O consumo depende do provedor, não do método em si.
+
+---
+
 ## Como usar o AI-DLC (passo a passo)
 
 ### Pré-requisitos
@@ -420,7 +488,7 @@ O AI-DLC é poderoso, mas não é mágica. Estes são os pontos que mais causam 
 
 ### Custo e desperdício
 
-O AI-DLC consome **mais tokens** por rodar várias fases. O desperdício silencioso é outro problema:
+O AI-DLC consome **mais tokens** por rodar várias fases — veja [Custo de tokens](#custo-de-tokens). O desperdício silencioso é outro problema:
 
 | Armadilha | Consequência |
 |-----------|--------------|
