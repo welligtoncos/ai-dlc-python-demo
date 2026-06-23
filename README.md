@@ -325,6 +325,171 @@ Abra os pares `*.md` + `*.opt-in.md` dessas pastas antes de criar a sua — é o
 
 ---
 
+## AI-DLC com outro desenvolvedor (handoff e brownfield)
+
+A prova de fogo de qualquer metodologia: **funciona quando outra pessoa pega o projeto?** O AI-DLC tem vantagem real aqui — com armadilhas que vale conhecer.
+
+### O que acontece quando outro dev usa `Using AI-DLC, ...`
+
+No **primeiro ciclo** desta PoC, o agente detectou **greenfield** — sem código, reverse engineering dispensável. Para quem clonar o repo **agora** e pedir uma melhoria, o comportamento é **brownfield**:
+
+| Etapa | Greenfield (você) | Brownfield (outro dev) |
+|-------|-------------------|------------------------|
+| Workspace Detection | Projeto vazio | Código em `app/`, testes existentes |
+| Reverse Engineering | Pulado | **Executado** — mapeia o sistema antes de propor mudanças |
+| Requirements / Plano | Do zero | Com **análise de impacto** no que já funciona |
+| Gates de aprovação | Iguais | Iguais |
+
+O agente lê `app/`, testes e endpoints atuais **antes** de sugerir alterações — para não quebrar o que já passa em `pytest`.
+
+### O ouro: artefatos que você deixou
+
+A pasta `aidlc-docs/` dá contexto histórico ao próximo dev **e** ao agente:
+
+| Artefato | O que preserva |
+|----------|----------------|
+| `requirements.md` | O que o sistema deve fazer e **por quê** (PUT parcial, UTC, 204…) |
+| `execution-plan.md` | Quais etapas rodaram ou foram puladas |
+| `audit.md` | Raciocínio e aprovações de cada gate |
+| `aidlc-state.md` | Estado atual do workflow |
+
+O novo dev não precisa adivinhar nem interromper o autor original: *"por que PUT é parcial?"* — está documentado.
+
+### Mesmas regras para todo o time
+
+Com `.cursor/rules/` e `.aidlc-rule-details/extensions/` **versionados no Git**, o outro dev herda o mesmo processo e as mesmas restrições. Extensões bloqueantes (qualidade, segurança) continuam valendo para ele.
+
+### Fluxo típico de uma melhoria
+
+```text
+1. git clone + Using AI-DLC, quero adicionar [feature]...
+2. Brownfield detectado → Reverse Engineering
+3. Inception (requisitos + impacto no código existente)
+4. Workflow Planning → aprovação
+5. Code Generation → aprovação
+6. Build and Test → pytest deve continuar verde
+```
+
+A diferença em relação ao ciclo inicial: há sistema existente a respeitar — **risco e impacto** ganham mais peso.
+
+### Armadilhas (disciplina humana)
+
+Duas condições para a promessa se cumprir:
+
+**1. Versionar os artefatos no Git**
+
+Toda a continuidade depende de commitar:
+
+```text
+aidlc-docs/              # Histórico de decisões
+.cursor/rules/           # Núcleo do workflow
+.aidlc-rule-details/     # Regras + extensões
+```
+
+Sem isso, o clone traz só código — o agente começa **cego** sobre decisões passadas. **Este repositório já segue essa prática** (commits incluem `aidlc-docs/`).
+
+**2. Manter documentação alinhada ao código**
+
+Se alguém alterar código **fora** do AI-DLC (edição manual sem atualizar `aidlc-docs/`), o `requirements.md` pode ficar desatualizado. O reverse engineering ainda lê o código real, mas o *porquê* documentado pode mentir.
+
+**Disciplina do time:** mudanças significativas passam pelo fluxo — documentação e código andam juntos.
+
+### Variação entre modelos e IDEs
+
+O AI-DLC busca **reprodutibilidade** — regras claras para resultados parecidos. Porém modelos e IDEs diferentes (Cursor vs Claude Code, modelo A vs B) podem variar um pouco na execução.
+
+| Para máxima consistência | Recomendação |
+|--------------------------|--------------|
+| Regras | Mesmas em todo o repo (já versionadas) |
+| Ferramenta | Padronizar IDE quando possível |
+| Modelo | Alinhar modelo principal do time |
+
+As regras **minimizam** a variância; não a eliminam por completo.
+
+### Resumo
+
+O AI-DLC foi desenhado para colaboração: **brownfield + artefatos versionados + regras compartilhadas** fazem o próximo dev começar com contexto, não do zero.
+
+A ferramenta dá o mecanismo; o time mantém o hábito de **commitar `aidlc-docs/`** e **passar mudanças relevantes pelo fluxo**.
+
+---
+
+## Riscos, custos e limitações (leia antes de escalar)
+
+O AI-DLC é poderoso, mas não é mágica. Estes são os pontos que mais causam dor — e como se defender.
+
+### Custo e desperdício
+
+O AI-DLC consome **mais tokens** por rodar várias fases. O desperdício silencioso é outro problema:
+
+| Armadilha | Consequência |
+|-----------|--------------|
+| Fluxo completo em tarefa trivial | Overhead sem retorno |
+| Aprovar gates no automático | Paga o processo **sem** colher o controle |
+
+**Regra prática:** se você não vai **ler e revisar** cada gate de verdade, talvez aquela tarefa não devesse usar AI-DLC. O custo só se paga quando a revisão humana acontece.
+
+### Confiança cega nos artefatos
+
+`requirements.md`, `execution-plan.md` e afins parecem oficiais e completos — mas foram gerados por IA e podem conter **suposições erradas que parecem corretas**.
+
+O risco é baixar a guarda porque *"está documentado e bonito"*. **Documentação confiante ≠ documentação correta.** Trate cada artefato como **proposta a validar**, não como verdade.
+
+### Deriva entre documento e código (drift)
+
+Se alguém edita código na mão **sem** passar pelo fluxo, `aidlc-docs/` passa a descrever um sistema que não existe mais. Isso é **pior que não ter documentação** — engana.
+
+**Defesa cultural:** mudanças significativas passam pelo fluxo, **ou** os docs são explicitamente atualizados.
+
+### Segurança e a pegadinha das extensões
+
+As extensões de segurança incluídas (ex.: Security Baseline) são **referência direcional**, não proteção pronta para produção. Cada organização deve **construir, customizar e testar** suas próprias regras antes de usar em produção.
+
+| Erro perigoso | Realidade |
+|---------------|-----------|
+| *"Ativei Security Baseline"* | *"Tenho um ponto de partida a endurecer"* |
+| *"Meu sistema está seguro"* | *"Preciso validar regras no meu contexto"* |
+
+Confundir extensão ativada com sistema seguro é um erro grave.
+
+### Limites técnicos práticos
+
+| Tópico | Orientação |
+|--------|------------|
+| **Windows** | Use `/` nos caminhos dentro de arquivos markdown — `\` pode quebrar referências das regras |
+| **Tamanho de regras** | No Cursor, regras muito grandes (> ~500 linhas) podem não ser aplicadas bem — prefira regras focadas |
+| **Recarregamento** | Após editar qualquer regra, abra um **chat novo** — mudanças não pegam na sessão atual |
+
+### Variabilidade entre modelos e ferramentas
+
+O AI-DLC busca reprodutibilidade, mas **modelos diferentes se comportam diferente**. O mesmo prompt pode gerar resultados distintos entre execuções — é IA, não um compilador.
+
+Para consistência real: padronize **regras + ferramenta + modelo** no time. Não assuma determinismo total.
+
+### O risco humano mais sério: complacência
+
+O processo dá uma sensação tão boa de controle que existe o risco de clicar `✅ Approve` em cada gate **sem ler** — *"o processo cuida disso"*.
+
+Aí você tem **teatro de controle** sem controle. A metodologia move a responsabilidade para você de forma explícita; **não a elimina**.
+
+### Maturidade do projeto
+
+O AI-DLC é um projeto em **evolução ativa** (AWS Labs). Implicações práticas:
+
+- **Operations** ainda é placeholder — não espere deploy/infra automatizados hoje
+- Releases podem mudar comportamento — acompanhe atualizações em `aidlc-rules/VERSION` e no repositório upstream
+- Ao atualizar regras, **revise suas customizações** em `extensions/`
+
+É algo que evolui rápido (bom), mas pode mudar debaixo de você (exige atenção).
+
+### Alerta em uma frase
+
+> O maior risco do AI-DLC não é técnico — é **humano**: confiar demais nos documentos, tratar aprovação como formalidade, achar que extensão de segurança = sistema seguro.
+
+A ferramenta entrega controle **se você exercer controle de verdade** em cada ponto. Com atenção, é um multiplicador excelente; no automático, vira burocracia cara que mascara os mesmos riscos de sempre.
+
+---
+
 ## Task Manager API (resultado desta PoC)
 
 API REST CRUD para o recurso `Task`, implementada com **FastAPI**, **SQLModel** e **SQLite**.
