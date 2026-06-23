@@ -1,83 +1,114 @@
-# Requirements Clarification Questions
+# Requirements Clarification Questions — Task Manager API
 
-Por favor, responda às perguntas abaixo preenchendo a tag `[Answer]:` de cada uma.
-Use a letra da opção escolhida (ex.: `A`) ou descreva após `X)` quando escolher "Other".
+Projeto: **API REST de Gerenciador de Tarefas** (FastAPI + SQLite + SQLModel + pytest).
+
+**Status**: Todas as perguntas respondidas em 2026-06-22.
 
 ---
 
 ## Question 1
-Qual nível de rigor na validação de e-mail você deseja?
+Como deve funcionar o **PUT /tasks/{id}**?
 
-A) Validação simples — regex básico (parte local + `@` + domínio com TLD), adequado para a maioria dos formulários
+A) Substituição completa — o corpo deve incluir todos os campos editáveis (`titulo`, `descricao`, `concluida`); campos omitidos são rejeitados ou tratados como inválidos
 
-B) Validação moderada — regras mais completas (comprimento, caracteres permitidos, domínio com pelo menos um ponto)
+B) Atualização parcial — apenas os campos enviados no JSON são alterados; os demais permanecem inalterados
 
-C) Validação estrita — aproximação do RFC 5322 (mais complexa, cobre casos raros)
+C) Substituição completa com defaults — campos omitidos assumem valores padrão (`descricao` → `null`, `concluida` → `false`)
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: B
 
 ---
 
 ## Question 2
-Qual deve ser o comportamento da função quando o e-mail é inválido?
+Validação de **titulo vazio**: como tratar espaços em branco?
 
-A) Retornar `False` (e `True` quando válido) — assinatura `is_valid_email(email: str) -> bool`
+A) Rejeitar se, após `strip()`, o título ficar vazio (recomendado)
 
-B) Retornar `None` para inválido e o e-mail normalizado (strip/lower) quando válido
-
-C) Lançar exceção customizada para e-mail inválido
+B) Rejeitar apenas string literal vazia `""` (espaços são aceitos)
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A
 
 ---
 
 ## Question 3
-Qual estrutura de projeto Python você prefere?
+Qual formato e fuso para **criada_em**?
 
-A) Módulo simples na raiz — `email_validator.py` + `tests/test_email_validator.py`
+A) `datetime` UTC em ISO 8601 na resposta JSON (ex.: `"2026-06-22T14:00:00Z"`)
 
-B) Pacote Python — `src/email_validator/` com `__init__.py` e testes em `tests/`
+B) `datetime` local do servidor, sem timezone na serialização
 
-C) Pacote com `pyproject.toml` (pytest configurado, pronto para distribuição)
+C) Apenas data, sem hora (`YYYY-MM-DD`)
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A
 
 ---
 
 ## Question 4
-Qual framework de testes unitários?
+Resposta do **DELETE /tasks/{id}** em caso de sucesso?
 
-A) `pytest` (recomendado)
+A) `204 No Content` — corpo vazio
 
-B) `unittest` (stdlib)
+B) `200 OK` — corpo JSON com mensagem de confirmação
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A
 
 ---
 
 ## Question 5
-A função deve normalizar o e-mail antes de validar (ex.: `strip()`, lowercase no domínio)?
+Estrutura de pastas do código Python?
 
-A) Sim — remover espaços e normalizar domínio para minúsculas
+A) Layout simples na raiz — `main.py`, `models.py`, `database.py`, `tests/`
 
-B) Não — validar exatamente a string recebida, sem alteração
+B) Pacote `app/` — `app/main.py`, `app/models.py`, `app/routers/tasks.py`, `tests/`
+
+C) Pacote `src/task_manager/` com `pyproject.toml` (estrutura publicável)
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: B
 
 ---
 
-## Question 6 — Security Extensions
-Should security extension rules be enforced for this project?
+## Question 6
+Local do arquivo SQLite?
+
+A) `tasks.db` na raiz do projeto (desenvolvimento)
+
+B) Caminho configurável via variável de ambiente (ex.: `DATABASE_URL` ou `SQLITE_PATH`)
+
+C) `:memory:` nos testes e arquivo em disco apenas em runtime/dev
+
+X) Other (please describe after [Answer]: tag below)
+
+[Answer]: B
+
+---
+
+## Question 7
+Comportamento do **GET /tasks** (listagem)?
+
+A) Retornar todas as tarefas sem ordenação garantida
+
+B) Ordenar por `criada_em` decrescente (mais recentes primeiro)
+
+C) Ordenar por `id` crescente
+
+X) Other (please describe after [Answer]: tag below)
+
+[Answer]: B
+
+---
+
+## Question 8 — Security Extensions
+Deseja aplicar as regras da extensão **Security Baseline** neste projeto?
 
 A) Yes — enforce all SECURITY rules as blocking constraints (recommended for production-grade applications)
 
@@ -85,12 +116,12 @@ B) No — skip all SECURITY rules (suitable for PoCs, prototypes, and experiment
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: B
 
 ---
 
-## Question 7 — Resiliency Extensions
-Should the resiliency baseline be applied to this project?
+## Question 9 — Resiliency Extensions
+Deseja aplicar a extensão **Resiliency Baseline**?
 
 A) Yes — apply the resiliency baseline as directional best practices and design-time guidance
 
@@ -98,19 +129,34 @@ B) No — skip the resiliency baseline (suitable for PoCs, prototypes, and exper
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: B
 
 ---
 
-## Question 8 — Property-Based Testing Extension
-Should property-based testing (PBT) rules be enforced for this project?
+## Question 10 — Property-Based Testing Extension
+Deseja aplicar regras de **Property-Based Testing (PBT)**?
 
 A) Yes — enforce all PBT rules as blocking constraints
 
 B) Partial — enforce PBT rules only for pure functions and serialization round-trips
 
-C) No — skip all PBT rules (suitable for simple CRUD applications, UI-only projects, or thin integration layers)
+C) No — skip all PBT rules (unit tests with pytest only)
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: C
+
+---
+
+## Requisitos já confirmados (não requer resposta)
+
+| Área | Decisão |
+|------|---------|
+| Stack | FastAPI + SQLite + SQLModel + pytest |
+| Recurso | `Task` |
+| Campos | `id` (auto), `titulo` (obrigatório), `descricao` (opcional), `concluida` (bool, default `false`), `criada_em` (auto) |
+| Endpoints | POST/GET/GET{id}/PUT/DELETE em `/tasks` |
+| POST | Retorna `201 Created` |
+| GET/PUT/DELETE por id | `404` se não existir |
+| Regra de negócio | `titulo` não pode ser vazio |
+| Fora de escopo | Autenticação, usuários, paginação |

@@ -1,75 +1,83 @@
 # ai-dlc-python-demo
 
-Demonstração do workflow **AI-DLC** (AI-Driven Development Life Cycle) com Python: planejamento guiado por IA, documentação rastreável e implementação incremental.
+Demonstração do workflow **AI-DLC** (AI-Driven Development Life Cycle) com Python: API REST de gerenciamento de tarefas construída com planejamento guiado por IA.
 
 Repositório: [github.com/welligtoncos/ai-dlc-python-demo](https://github.com/welligtoncos/ai-dlc-python-demo)
 
-## Objetivo
+## Task Manager API
 
-Construir uma função utilitária em Python que **valida o formato de e-mail**, acompanhada de **testes unitários** — seguindo as fases do AI-DLC (Inception → Construction → Build & Test).
+API REST CRUD para o recurso `Task`, implementada com **FastAPI**, **SQLModel** e **SQLite**.
 
-## Status do projeto
+### Endpoints
 
-| Fase | Status |
-|------|--------|
-| Workspace Detection | Concluído |
-| Requirements Analysis | Em andamento — [perguntas pendentes](aidlc-docs/inception/requirements/requirement-verification-questions.md) |
-| Code Generation | Pendente |
-| Build and Test | Pendente |
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/tasks` | Criar tarefa (201) |
+| `GET` | `/tasks` | Listar todas (ordenadas por `criada_em` desc) |
+| `GET` | `/tasks/{id}` | Buscar por ID (404 se não existir) |
+| `PUT` | `/tasks/{id}` | Atualizar parcialmente (404 se não existir) |
+| `DELETE` | `/tasks/{id}` | Remover (204, 404 se não existir) |
 
-O código da validação de e-mail ainda **não foi gerado**; o workflow está na fase de requisitos.
+Documentação interativa: `http://localhost:8000/docs`
 
-## Estrutura do repositório
+### Modelo `Task`
+
+| Campo | Tipo | Observações |
+|-------|------|-------------|
+| `id` | int | Auto-gerado |
+| `titulo` | string | Obrigatório; não vazio após `strip()` |
+| `descricao` | string \| null | Opcional |
+| `concluida` | bool | Padrão `false` |
+| `criada_em` | datetime | UTC, ISO 8601 com `Z` |
+
+## Estrutura do projeto
 
 ```text
 .
-├── README.md                 # Este arquivo
-├── .cursor/rules/            # Regra Cursor do workflow AI-DLC
-├── .aidlc-rule-details/      # Detalhes das regras AI-DLC (Cursor)
-├── aidlc-rules/              # Pacote de regras AI-DLC (referência)
-└── aidlc-docs/               # Documentação gerada pelo workflow
-    ├── aidlc-state.md        # Estado e progresso do AI-DLC
-    ├── audit.md              # Trilha de auditoria
-    └── inception/
-        └── requirements/     # Requisitos e perguntas de clarificação
+├── app/
+│   ├── main.py
+│   ├── models.py
+│   ├── database.py
+│   └── routers/
+│       └── tasks.py
+├── tests/
+│   ├── conftest.py
+│   └── test_tasks.py
+├── requirements.txt
+└── aidlc-docs/          # Documentação AI-DLC
 ```
 
-**Regra de organização:** código de aplicação na raiz do projeto; documentação do AI-DLC apenas em `aidlc-docs/`.
-
-## O que é o AI-DLC?
-
-O AI-DLC é um processo adaptativo de desenvolvimento em que a IA:
-
-- Analisa o workspace e define se o projeto é greenfield ou brownfield
-- Coleta requisitos e faz perguntas quando necessário
-- Planeja quais etapas executar (simples vs. complexo)
-- Gera código, testes e instruções de build
-- Mantém auditoria completa das decisões
-
-## Próximos passos
-
-1. Responder as perguntas em [`aidlc-docs/inception/requirements/requirement-verification-questions.md`](aidlc-docs/inception/requirements/requirement-verification-questions.md)
-2. Aprovar o documento de requisitos
-3. Gerar `email_validator.py` e testes com `pytest`
-
-## Desenvolvimento (após geração do código)
+## Desenvolvimento
 
 ```bash
-# Criar ambiente virtual (recomendado)
+# Ambiente virtual
 python -m venv .venv
-.venv\Scripts\activate   # Windows
-# source .venv/bin/activate  # Linux/macOS
+.venv\Scripts\activate        # Windows
+# source .venv/bin/activate   # Linux/macOS
 
-# Instalar dependências de teste
-pip install pytest
+# Dependências
+pip install -r requirements.txt
 
-# Executar testes
+# Executar API
+uvicorn app.main:app --reload
+
+# Testes
 pytest
 ```
 
-## Licença
+### Variáveis de ambiente
 
-A definir.
+| Variável | Padrão | Descrição |
+|----------|--------|-----------|
+| `DATABASE_URL` | `sqlite:///./tasks.db` | Conexão SQLite |
+
+## AI-DLC
+
+Documentação do workflow em `aidlc-docs/`:
+
+- Requisitos: `aidlc-docs/inception/requirements/requirements.md`
+- Plano de execução: `aidlc-docs/inception/plans/execution-plan.md`
+- Estado: `aidlc-docs/aidlc-state.md`
 
 ## Autor
 
