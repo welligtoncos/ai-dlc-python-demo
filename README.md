@@ -20,6 +20,60 @@ O AI-DLC é um workflow adaptativo para desenvolvimento de software com IA. Em v
 
 ---
 
+## Por que usar o AI-DLC?
+
+Depois de rodar o fluxo inteiro (como nesta PoC), a avaliação fica baseada na prática — não na propaganda. Os motivos principais, em ordem de peso:
+
+### 1. Controle real sobre a IA (o motivo nº 1)
+
+Sem AI-DLC, você pede algo e a IA decide sozinha — inclusive escolhas que você nem sabia que estavam sendo tomadas. Nesta PoC, o processo **forçou** decisões explícitas: `strip()` no título, formato UTC da data, `204` no DELETE, PUT parcial. Num fluxo comum, a IA chutaria e você só descobriria o problema depois.
+
+O AI-DLC inverte isso: **a IA propõe, você aprova, em cada gate**. Você não fica refém de 30 minutos de código na direção errada.
+
+### 2. Menos retrabalho
+
+Corrigir uma decisão no `requirements.md` custa segundos. Corrigir a mesma decisão depois que virou código, testes e dependências custa horas. O AI-DLC empurra decisões para **antes** do processo, onde errar é barato — o custo de um erro cresce exponencialmente conforme avança no ciclo.
+
+### 3. Documentação que nasce sozinha
+
+A pasta `aidlc-docs/` deste repositório é documentação real, rastreável e versionável — sem você escrever do zero. Serve para onboarding, para justificar *"por que fizemos assim"* meses depois, ou para auditoria. O `audit.md` registra o raciocínio das decisões, algo que normalmente se perde em chats ou na cabeça de quem saiu.
+
+### 4. Padronização e imposição de regras
+
+Com o mesmo conjunto de regras, o processo fica consistente entre devs. Extensões **bloqueantes** (veja seção de customização) transformam boas práticas esquecidas em **gates que travam o fluxo** — segurança, compliance e convenções da empresa viram regras que a IA não ignora.
+
+### 5. Independência de fornecedor
+
+O AI-DLC é agnóstico: Cursor, Claude Code, Amazon Q, Copilot. Trocou de IDE? As regras vão junto (`.cursor/rules/` + `.aidlc-rule-details/`). Sendo open source (MIT-0), você customiza sem amarras legais.
+
+### Em uma frase
+
+> O AI-DLC transforma a IA de um *"gerador que adivinha o que você quer"* em um *"engenheiro disciplinado que confirma antes de agir e documenta o porquê"*.
+
+**O que você troca:** um pouco de velocidade bruta em favor de **controle**, **rastreabilidade** e **menos retrabalho**.
+
+### Quando NÃO usar (seja honesto)
+
+| Situação | Recomendação |
+|----------|--------------|
+| Fix de uma linha, ajuste trivial, script descartável | **Não use** — overhead puro |
+| Feature nova de complexidade média/alta | **Use** |
+| Projeto do zero, código desconhecido, requisitos nebulosos | **Use** — errar a direção sai caro |
+
+Para tarefa pequena: peça código direto. Para tarefa que importa: use o processo.
+
+**Equilíbrio adaptativo:** nesta PoC, o plano **pulou 8 de 10 etapas** porque o escopo era simples. Você não paga o processo completo à toa — o sistema se auto-enxuga.
+
+### Regra de decisão
+
+```text
+Use AI-DLC quando o custo de errar a direção > custo do processo.
+```
+
+Para um dev experiente, o maior valor muitas vezes **não é o código** — é a disciplina imposta à IA e a documentação que sobra de graça.
+
+---
+
 ## Como usar o AI-DLC (passo a passo)
 
 ### Pré-requisitos
@@ -392,12 +446,15 @@ curl http://localhost:8000/tasks
 
 ## Documentação de referência desta PoC
 
+Esta PoC é o **exemplo concreto** dos motivos acima: requisitos explícitos, plano enxuto, código aprovado, 11 testes passando, `aidlc-docs/` completo.
+
 | Documento | Conteúdo |
 |-----------|----------|
 | [requirements.md](aidlc-docs/inception/requirements/requirements.md) | Requisitos formais |
 | [execution-plan.md](aidlc-docs/inception/plans/execution-plan.md) | Plano de execução |
 | [build-and-test-summary.md](aidlc-docs/construction/build-and-test/build-and-test-summary.md) | Resultado de build e testes |
 | [aidlc-state.md](aidlc-docs/aidlc-state.md) | Estado final do workflow |
+| [audit.md](aidlc-docs/audit.md) | Trilha de decisões e aprovações |
 
 ---
 
